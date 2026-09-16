@@ -1,13 +1,11 @@
 {
-  description = "A Nix-flake-based Go 1.23 development environment";
+  description = "FUSE filesystem exposing a filtered view of a Nix store scoped to a toplevel closure";
 
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
   outputs =
     { self, nixpkgs }:
     let
-      goVersion = 23; # Change this to update the whole stack
-
       supportedSystems = [
         "x86_64-linux"
         "aarch64-linux"
@@ -21,14 +19,15 @@
           f {
             pkgs = import nixpkgs {
               inherit system;
-              overlays = [ self.overlays.default ];
             };
           }
         );
     in
     {
-      overlays.default = final: prev: {
-        go = final."go_1_${toString goVersion}";
+      overlays = {
+        default = final: prev: {
+          nix-store-fs = self.packages.${final.stdenv.hostPlatform.system}.nix-store-fs;
+        };
       };
 
       packages = forEachSupportedSystem (
@@ -62,7 +61,6 @@
 
             hardeningDisable = [ "fortify" ];
           };
-
         }
       );
     };
